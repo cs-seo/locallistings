@@ -27,8 +27,15 @@ interface PageProps {
 
 /** Pre-build the top-traffic listings at deploy; long tail is on-demand ISR. */
 export async function generateStaticParams() {
-  const top = await getTopListingSlugs({ limit: 5_000 });
-  return top.map((l) => ({ state: l.stateSlug, suburb: l.suburbSlug, slug: l.slug }));
+  // Resilient at build time: if Supabase isn't reachable (env var missing, DB
+  // empty, etc.), return [] and let the long tail render on-demand via ISR.
+  try {
+    const top = await getTopListingSlugs({ limit: 5_000 });
+    return top.map((l) => ({ state: l.stateSlug, suburb: l.suburbSlug, slug: l.slug }));
+  } catch (err) {
+    console.warn("[generateStaticParams] skipping pre-render:", (err as Error).message);
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

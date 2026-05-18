@@ -30,9 +30,6 @@
 [functions]
   node_bundler = "esbuild"
 
-# Redirect trailing slashes — single canonical URL per page.
-[[redirects]]
-  from = "/*/"
-  to = "/:splat"
-  status = 301
-  force = true
+# Trailing-slash normalization is handled by Next.js via `trailingSlash: false`
+# in next.config.mjs. A duplicate rule here caused a redirect loop, so the
+# manual redirect block was removed.

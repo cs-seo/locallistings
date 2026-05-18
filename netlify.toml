@@ -1,10 +1,17 @@
 [build]
-  command = "pnpm build"
-  publish = ".next"
+  command = "next build"
+  # The @netlify/plugin-nextjs runtime sets publish dir itself — don't override.
 
 [build.environment]
   NODE_VERSION = "20"
   NEXT_TELEMETRY_DISABLED = "1"
+
+# Explicit reference to the Next.js runtime plugin. This bundles dynamic
+# routes (App Router pages + /api/*) into Netlify Functions and wires
+# request routing. Without it, Netlify serves .next as a static folder
+# and dynamic routes 404.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 # Long-lived caching for static image assets served from Supabase / our CDN base.
 # Pages themselves are revalidated via /api/revalidate (ISR).

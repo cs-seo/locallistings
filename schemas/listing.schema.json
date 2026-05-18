@@ -1,0 +1,284 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://locallistings.com.au/schemas/listing.schema.json",
+  "title": "Listing",
+  "description": "Canonical normalized listing record. One row per business. Source of truth for /[state]/[suburb]/[slug] pages.",
+  "type": "object",
+  "required": [
+    "id",
+    "slug",
+    "name",
+    "category",
+    "address",
+    "geo",
+    "rating",
+    "reviews",
+    "images",
+    "faqs",
+    "peopleOftenSay",
+    "source",
+    "permalinks",
+    "seo",
+    "createdAt",
+    "updatedAt"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Internal UUID (primary key in Supabase).",
+      "format": "uuid"
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL-safe business slug, e.g. 'fixed-fast-plumbing'. Unique within (state, suburb).",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "name": { "type": "string", "minLength": 1 },
+    "category": {
+      "type": "object",
+      "description": "Primary service category — drives URL and schema.org type.",
+      "required": ["slug", "label", "schemaType"],
+      "additionalProperties": false,
+      "properties": {
+        "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "label": { "type": "string" },
+        "schemaType": {
+          "type": "string",
+          "description": "schema.org type for JSON-LD injection.",
+          "enum": [
+            "LocalBusiness",
+            "Plumber",
+            "Electrician",
+            "HVACBusiness",
+            "Locksmith",
+            "RoofingContractor",
+            "GeneralContractor",
+            "AutoRepair",
+            "Dentist",
+            "MedicalBusiness",
+            "Restaurant",
+            "BeautySalon",
+            "HairSalon",
+            "ChildCare",
+            "Store"
+          ]
+        }
+      }
+    },
+    "subCategories": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "description": { "type": "string" },
+    "phone": {
+      "type": ["string", "null"],
+      "description": "E.164 format preferred (+61...)."
+    },
+    "website": { "type": ["string", "null"], "format": "uri" },
+    "address": {
+      "type": "object",
+      "required": ["street", "suburb", "suburbSlug", "state", "stateSlug", "postcode", "country"],
+      "additionalProperties": false,
+      "properties": {
+        "street": { "type": "string" },
+        "suburb": { "type": "string" },
+        "suburbSlug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "state": {
+          "type": "string",
+          "enum": ["VIC", "NSW", "QLD", "WA", "SA", "TAS", "ACT", "NT"]
+        },
+        "stateSlug": {
+          "type": "string",
+          "enum": ["vic", "nsw", "qld", "wa", "sa", "tas", "act", "nt"]
+        },
+        "postcode": { "type": "string", "pattern": "^[0-9]{4}$" },
+        "country": { "type": "string", "const": "AU" }
+      }
+    },
+    "geo": {
+      "type": "object",
+      "required": ["lat", "lng"],
+      "additionalProperties": false,
+      "properties": {
+        "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+        "lng": { "type": "number", "minimum": -180, "maximum": 180 }
+      }
+    },
+    "openingHours": {
+      "type": "array",
+      "description": "Per-weekday opening hours; renders OpeningHoursSpecification in JSON-LD.",
+      "items": {
+        "type": "object",
+        "required": ["day"],
+        "additionalProperties": false,
+        "properties": {
+          "day": {
+            "type": "string",
+            "enum": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+          },
+          "opens": { "type": ["string", "null"], "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+          "closes": { "type": ["string", "null"], "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+          "closed": { "type": "boolean", "default": false }
+        }
+      }
+    },
+    "rating": {
+      "type": "object",
+      "required": ["aggregate", "count"],
+      "additionalProperties": false,
+      "properties": {
+        "aggregate": { "type": "number", "minimum": 0, "maximum": 5 },
+        "count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "reviews": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "author", "rating", "text", "publishedAt"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "author": { "type": "string" },
+          "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "text": { "type": "string" },
+          "publishedAt": { "type": "string", "format": "date-time" },
+          "ownerResponse": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "text": { "type": "string" },
+              "publishedAt": { "type": "string", "format": "date-time" }
+            }
+          }
+        }
+      }
+    },
+    "peopleOftenSay": {
+      "type": "array",
+      "description": "Top 3-5 recurring themes extracted from reviews. Rendered as scannable tags above review feed.",
+      "minItems": 0,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["theme", "mentions", "sentiment"],
+        "additionalProperties": false,
+        "properties": {
+          "theme": {
+            "type": "string",
+            "description": "Short user-facing label, e.g. 'Fast response time'."
+          },
+          "mentions": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "How many reviews this theme appeared in (used for tag weight)."
+          },
+          "sentiment": { "type": "string", "enum": ["positive", "neutral", "negative"] },
+          "exampleQuote": {
+            "type": ["string", "null"],
+            "description": "Optional verbatim snippet from a review supporting this theme."
+          }
+        }
+      }
+    },
+    "faqs": {
+      "type": "array",
+      "description": "Exactly 3 programmatically-generated FAQs; rendered both as UI and FAQPage JSON-LD.",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["question", "answer"],
+        "additionalProperties": false,
+        "properties": {
+          "question": { "type": "string" },
+          "answer": { "type": "string" }
+        }
+      }
+    },
+    "images": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["url", "filename", "alt", "width", "height"],
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Final CDN URL after Supabase Storage upload."
+          },
+          "filename": {
+            "type": "string",
+            "description": "Programmatic filename: [business-slug]-[suburb-slug]-[category-slug]-NN.jpg",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?:-[0-9]+)?\\.(jpg|jpeg|webp|png)$"
+          },
+          "alt": {
+            "type": "string",
+            "description": "Auto-generated: '[Business Name] - [Service Category] in [Suburb, State]'."
+          },
+          "width": { "type": "integer", "minimum": 1 },
+          "height": { "type": "integer", "minimum": 1 },
+          "isPrimary": { "type": "boolean", "default": false },
+          "sourceUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Original GMB URL (kept for re-download/audit)."
+          }
+        }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "description": "Ownership/claim status. Drives the Claim Listing CTA visibility.",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "type": "string", "enum": ["unclaimed", "pending", "verified"] },
+        "verifiedAt": { "type": ["string", "null"], "format": "date-time" },
+        "ownerUserId": { "type": ["string", "null"] }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["provider", "scrapedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "provider": { "type": "string", "const": "apify:google-maps-scraper" },
+        "placeId": { "type": ["string", "null"], "description": "Google Place ID — dedupe key." },
+        "scrapedAt": { "type": "string", "format": "date-time" },
+        "actorRunId": { "type": ["string", "null"] }
+      }
+    },
+    "permalinks": {
+      "type": "object",
+      "required": ["listing", "category"],
+      "additionalProperties": false,
+      "properties": {
+        "listing": {
+          "type": "string",
+          "description": "/[stateSlug]/[suburbSlug]/[slug]",
+          "pattern": "^/[a-z]{2,3}/[a-z0-9-]+/[a-z0-9-]+$"
+        },
+        "category": {
+          "type": "string",
+          "description": "/locations/[stateSlug]/[suburbSlug]/[categorySlug]",
+          "pattern": "^/locations/[a-z]{2,3}/[a-z0-9-]+/[a-z0-9-]+$"
+        }
+      }
+    },
+    "seo": {
+      "type": "object",
+      "required": ["title", "metaDescription"],
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string", "maxLength": 70 },
+        "metaDescription": { "type": "string", "maxLength": 165 },
+        "canonical": { "type": "string", "format": "uri" }
+      }
+    },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

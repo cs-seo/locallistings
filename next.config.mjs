@@ -20,9 +20,8 @@ const nextConfig = {
     ],
     formats: ["image/avif", "image/webp"],
   },
-  experimental: {
-    typedRoutes: true,
-  },
+  // Note: experimental.typedRoutes was removed because our Link hrefs are
+  // generated at runtime (e.g. /vic/richmond/...) and can't be statically validated.
 };
 
 export default nextConfig;

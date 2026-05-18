@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getServiceRoleSupabase } from "@/lib/supabase/server";
 import type { Listing } from "@/types/listing";
-import { ClaimListingDialog } from "@/components/listing/ClaimListingDialog";
 import { ClaimPageForm } from "./ClaimPageForm";
 
 export const metadata: Metadata = {
@@ -40,11 +39,9 @@ export default async function ClaimPage({ searchParams }: PageProps) {
         <ClaimPageForm listingId={listing.id} businessName={listing.name} />
       </div>
 
-      {/* Reuse the dialog component as a noop import so it ships in the same bundle if any nested page needs it later */}
       <noscript>
         <p className="mt-4 text-sm text-muted-foreground">JavaScript is disabled — use the form above.</p>
       </noscript>
-      {false && <ClaimListingDialog open={false} onOpenChange={() => {}} listing={listing} />}
     </div>
   );
 }

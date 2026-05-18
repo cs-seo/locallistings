@@ -4,7 +4,9 @@
 set search_path = public;
 
 -- Extensions
-create extension if not exists "uuid-ossp";
+-- Note: Supabase pre-installs pgcrypto (provides gen_random_uuid()) on every project,
+-- and it's on the public search path. We use that instead of uuid-ossp, whose schema
+-- (`extensions`) isn't on the default search path under the migration role.
 create extension if not exists pg_trgm;
 
 -- =====================================================================
@@ -13,7 +15,7 @@ create extension if not exists pg_trgm;
 -- the canonical Listing JSON (mirrors /schemas/listing.schema.json).
 -- =====================================================================
 create table listings (
-  id              uuid primary key default uuid_generate_v4(),
+  id              uuid primary key default gen_random_uuid(),
   place_id        text unique not null,             -- Google Place ID — dedupe key
   slug            text not null,
   name            text not null,
@@ -33,7 +35,7 @@ create unique index listings_unique_path on listings (state_slug, suburb_slug, s
 -- leads — contact form submissions
 -- =====================================================================
 create table leads (
-  id           uuid primary key default uuid_generate_v4(),
+  id           uuid primary key default gen_random_uuid(),
   listing_id   uuid not null references listings(id) on delete cascade,
   name         text not null,
   email        text not null,
@@ -50,7 +52,7 @@ create table leads (
 -- claims — "Claim this Listing" submissions
 -- =====================================================================
 create table claims (
-  id           uuid primary key default uuid_generate_v4(),
+  id           uuid primary key default gen_random_uuid(),
   listing_id   uuid not null references listings(id) on delete cascade,
   name         text not null,
   email        text not null,
